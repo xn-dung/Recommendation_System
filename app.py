@@ -14,6 +14,7 @@ import sys
 import os
 from src.utils import (fetch_poster, PROCESSED_MOVIES_PATH,
                        PROCESSED_RATINGS_PATH, ASSETS_DIR)
+from src.data_fetcher import ensure_file_from_env
 from src.recommenders.content_based import ContentBasedRecommender
 from src.recommenders.collaborative import CollaborativeRecommender
 from src.recommenders.deep_learning import DeepLearningRecommender
@@ -79,8 +80,22 @@ def load_system():
     Handles error checking if models are not found.
     """
     if not os.path.exists(PROCESSED_MOVIES_PATH):
-        st.error("Processed data not found. Please run the training pipeline first.")
-        st.stop()
+        # Try to automatically download processed datasets from environment/Streamlit secrets.
+        # Set PROCESSED_MOVIES_URL and PROCESSED_RATINGS_URL when deploying (Streamlit secrets or env).
+        # Example Streamlit secret keys: {'PROCESSED_MOVIES_URL': 'https://.../movies_processed.pkl', 'PROCESSED_RATINGS_URL': 'https://.../ratings_processed.pkl'}
+        got_movies = ensure_file_from_env(PROCESSED_MOVIES_PATH, ('PROCESSED_MOVIES_URL', 'PROCESSED_DATA_URL'))
+        got_ratings = True
+        if not os.path.exists(PROCESSED_RATINGS_PATH):
+            got_ratings = ensure_file_from_env(PROCESSED_RATINGS_PATH, ('PROCESSED_RATINGS_URL', 'PROCESSED_DATA_URL'))
+
+        if not got_movies or not os.path.exists(PROCESSED_MOVIES_PATH):
+            st.error("Processed data not found. Please run the training pipeline first or provide download URLs via environment/Streamlit secrets.")
+            st.stop()
+
+        # If we successfully downloaded movies but not ratings, try to give clearer message
+        if not os.path.exists(PROCESSED_RATINGS_PATH):
+            st.error("Processed ratings file not found. Provide PROCESSED_RATINGS_URL (env/secret) or run the training pipeline.")
+            st.stop()
 
     # Load data
     movies = pd.read_pickle(PROCESSED_MOVIES_PATH)
