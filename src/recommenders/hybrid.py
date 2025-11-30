@@ -14,7 +14,11 @@ class HybridRecommender:
 
         preds = []
         for mid in content_recs['movieId']:
-            preds.append(self.svd_model.predict(user_id, mid))
+            try:
+                p = self.svd_model.predict(user_id, mid)
+                preds.append(float(p.est))
+            except Exception:
+                preds.append(0.0)
 
         content_recs = content_recs.copy()
         content_recs['predicted_rating'] = preds

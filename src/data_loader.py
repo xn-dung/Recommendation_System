@@ -10,7 +10,7 @@ from src.utils import DATA_DIR
 
 
 @st.cache_data
-def load_data():
+def load_data(ratings_nrows: int | None = 500000):
     """
     Loads main datasets (movies, ratings) with sampling to ensure performance.
     """
@@ -35,7 +35,9 @@ def load_data():
     links = pd.read_csv(links_path)
     movies = pd.merge(movies, links, on='movieId', how='left')
     # Limit rows to avoid memory issues in cloud environments
-    ratings = pd.read_csv(ratings_path, nrows=500000)
+    # Allow callers to request a limited number of rows for memory-safety (default 500k)
+    # or pass ratings_nrows=None to read the full file (useful for MovieLens-25M).
+    ratings = pd.read_csv(ratings_path, nrows=ratings_nrows)
     return movies, ratings
 
 

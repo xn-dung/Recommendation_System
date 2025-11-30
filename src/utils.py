@@ -97,5 +97,27 @@ def save_fig(fig, name):
         print(f"🖼️ Saved interactive '{name}.html'")
     # Check for Matplotlib figures (like WordCloud)
     elif hasattr(fig, 'savefig'):
-        fig.savefig(os.path.join(ASSETS_DIR, f"{name}.png"))
+        png_path = os.path.join(ASSETS_DIR, f"{name}.png")
+        html_path = os.path.join(ASSETS_DIR, f"{name}.html")
+        # Save PNG first
+        fig.savefig(png_path)
         print(f"🖼️ Saved static '{name}.png'")
+
+        # Create a simple HTML wrapper that embeds the PNG as base64.
+        try:
+            import base64
+            with open(png_path, 'rb') as imgf:
+                b64 = base64.b64encode(imgf.read()).decode('utf-8')
+            html = f"<html><body style='background:#ffffff;display:flex;justify-content:center;align-items:center;height:100%'><img src=\"data:image/png;base64,{b64}\" style=\"max-width:100%;height:auto;\"></body></html>"
+            with open(html_path, 'w', encoding='utf-8') as f:
+                f.write(html)
+            print(f"🖼️ Saved HTML wrapper '{name}.html' (embedded PNG)")
+        except Exception:
+            # If embedding fails for any reason, write a fallback HTML that references the PNG file relatively
+            try:
+                html = f"<html><body><img src=\"{os.path.basename(png_path)}\" alt=\"{name}\"></body></html>"
+                with open(html_path, 'w', encoding='utf-8') as f:
+                    f.write(html)
+                print(f"🖼️ Saved fallback HTML wrapper '{name}.html'")
+            except Exception:
+                print(f"⚠️ Could not write HTML wrapper for '{name}'")
